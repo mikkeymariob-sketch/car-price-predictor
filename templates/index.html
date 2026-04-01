@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Car Price Predictor | ML Model</title>
+<style>
+  :root {
+    --bg: #0f0f13;
+    --card: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #a78bfa;
+    --text: #e2e2f0;
+    --muted: #8888aa;
+    --success: #22c55e;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    padding: 24px 16px;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  header {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent2), #f472b6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  header p { color: var(--muted); margin-top: 8px; font-size: 0.95rem; }
+  .badge {
+    display: inline-block;
+    background: #1e1b4b;
+    border: 1px solid var(--accent);
+    color: var(--accent2);
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-top: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent2);
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: #12121c;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+  }
+  .field select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%238888aa' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 12px;
+    padding-right: 32px;
+  }
+  .field select option { background: #1a1a24; }
+  .btn-wrap { text-align: center; margin-top: 28px; }
+  button {
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 48px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  button:hover { opacity: 0.9; transform: translateY(-1px); }
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #result {
+    display: none;
+    text-align: center;
+    margin-top: 28px;
+    background: linear-gradient(135deg, #0d2a1a, #1a0d2a);
+    border: 1px solid var(--success);
+    border-radius: var(--radius);
+    padding: 28px;
+    animation: fadeIn 0.4s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  #result .label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
+  #result .price {
+    font-size: 2.8rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--success), #86efac);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 8px 0;
+  }
+  #result .sub { font-size: 0.82rem; color: var(--muted); }
+  #error-msg {
+    display: none;
+    color: #f87171;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.9rem;
+    background: #2a0d0d;
+    border: 1px solid #7f1d1d;
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .stats {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+  .stat {
+    text-align: center;
+    background: #1a1a24;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 20px;
+    flex: 1;
+    min-width: 130px;
+  }
+  .stat .val { font-size: 1.3rem; font-weight: 800; color: var(--accent2); }
+  .stat .key { font-size: 0.72rem; color: var(--muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+  footer { text-align: center; color: var(--muted); font-size: 0.78rem; margin-top: 32px; }
+  .loading { display: inline-block; width: 18px; height: 18px; border: 2px solid #fff4; border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🚗 Car Price Predictor</h1>
+    <p>Enter vehicle details below and get an instant price estimate powered by Machine Learning</p>
+    <span class="badge">Random Forest · R² = 0.75 · MAE ≈ $4,552</span>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="val">19,237</div><div class="key">Training Samples</div></div>
+    <div class="stat"><div class="val">13 Features</div><div class="key">Model Inputs</div></div>
+    <div class="stat"><div class="val">75.3%</div><div class="key">Accuracy (R²)</div></div>
+    <div class="stat"><div class="val">~$4,552</div><div class="key">Avg. Error (MAE)</div></div>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <h2>🔢 Numeric Details</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Production Year</label>
+        <input type="number" id="prod_year" value="2015" min="1980" max="2024"/>
+      </div>
+      <div class="field">
+        <label>Levy ($)</label>
+        <input type="number" id="levy" value="800" min="0"/>
+      </div>
+      <div class="field">
+        <label>Engine Volume (L)</label>
+        <input type="number" id="engine_vol" value="2.0" step="0.1" min="0.5" max="10"/>
+      </div>
+      <div class="field">
+        <label>Mileage (km)</label>
+        <input type="number" id="mileage" value="100000" min="0"/>
+      </div>
+      <div class="field">
+        <label>Cylinders</label>
+        <input type="number" id="cylinders" value="4" min="1" max="16"/>
+      </div>
+      <div class="field">
+        <label>Airbags</label>
+        <input type="number" id="airbags" value="4" min="0" max="16"/>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🏷️ Vehicle Specifications</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Manufacturer</label>
+        <select id="manufacturer">
+          {% for m in dropdown_data['Manufacturer'] %}
+          <option value="{{ m }}" {% if m == 'TOYOTA' %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="category">
+          {% for c in dropdown_data['Category'] %}
+          <option value="{{ c }}" {% if c == 'Sedan' %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Fuel Type</label>
+        <select id="fuel_type">
+          {% for f in dropdown_data['Fuel type'] %}
+          <option value="{{ f }}" {% if f == 'Petrol' %}selected{% endif %}>{{ f }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Gear Box Type</label>
+        <select id="gear_box">
+          {% for g in dropdown_data['Gear box type'] %}
+          <option value="{{ g }}" {% if g == 'Automatic' %}selected{% endif %}>{{ g }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Drive Wheels</label>
+        <select id="drive_wheels">
+          {% for d in dropdown_data['Drive wheels'] %}
+          <option value="{{ d }}" {% if d == 'Front' %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Steering Wheel</label>
+        <select id="wheel">
+          {% for w in dropdown_data['Wheel'] %}
+          <option value="{{ w }}" {% if w == 'Left wheel' %}selected{% endif %}>{{ w }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Leather Interior</label>
+        <select id="leather">
+          {% for l in dropdown_data['Leather interior'] %}
+          <option value="{{ l }}">{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-wrap">
+    <button id="predict-btn" onclick="predict()">Predict Price</button>
+  </div>
+
+  <div id="error-msg"></div>
+
+  <div id="result">
+    <div class="label">Estimated Market Price</div>
+    <div class="price" id="price-output">$0</div>
+    <div class="sub">Based on Random Forest model trained on 19,237 real car listings</div>
+  </div>
+
+  <footer>
+    <p>Car Price Prediction · Random Forest Regressor · Built for CSSD 609</p>
+  </footer>
+</div>
+
+<script>
+async function predict() {
+  const btn = document.getElementById('predict-btn');
+  const result = document.getElementById('result');
+  const errMsg = document.getElementById('error-msg');
+
+  result.style.display = 'none';
+  errMsg.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading"></span>Predicting...';
+
+  const payload = {
+    'Prod. year': document.getElementById('prod_year').value,
+    'Levy': document.getElementById('levy').value,
+    'Engine volume': document.getElementById('engine_vol').value,
+    'Mileage': document.getElementById('mileage').value,
+    'Cylinders': document.getElementById('cylinders').value,
+    'Airbags': document.getElementById('airbags').value,
+    'Manufacturer': document.getElementById('manufacturer').value,
+    'Category': document.getElementById('category').value,
+    'Fuel type': document.getElementById('fuel_type').value,
+    'Gear box type': document.getElementById('gear_box').value,
+    'Drive wheels': document.getElementById('drive_wheels').value,
+    'Wheel': document.getElementById('wheel').value,
+    'Leather interior': document.getElementById('leather').value,
+  };
+
+  try {
+    const resp = await fetch('/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    document.getElementById('price-output').textContent = '$' + data.price.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    result.style.display = 'block';
+  } catch(e) {
+    errMsg.textContent = '⚠️ Error: ' + e.message;
+    errMsg.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Predict Price';
+  }
+}
+</script>
+</body>
+</html>
